@@ -1,16 +1,22 @@
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
-import {v4 as uuidv4} from "uuid";
 import * as dotenv from "dotenv";
 dotenv.config();
+
+if (!process.env.TARGET_BUCKET) {
+  console.warn("Warning: TARGET_BUCKET is not set in environment variables.");
+}
+if (!("ENFORCE_APP_CHECK" in process.env)) {
+  console.warn("Warning: ENFORCE_APP_CHECK is not set in environment variables. Defaulting to false.");
+}
 
 admin.initializeApp();
 console.log("Firebase admin initialized.");
 
-export const saveAppsFlyerData = onCall(
+export const saveAttributionData = onCall(
   {
-    enforceAppCheck: false,
+    enforceAppCheck: process.env.ENFORCE_APP_CHECK === "true",
     secrets: [],
   },
   async (request) => {
@@ -20,6 +26,15 @@ export const saveAppsFlyerData = onCall(
       throw new HttpsError(
         "invalid-argument",
         "Payload must be a non-empty JSON object."
+      );
+    }
+
+    const { _firebaseFunction_fileName, _firebaseFunction_folderPrefix, ...payload } = data;
+
+    if (!_firebaseFunction_fileName || !_firebaseFunction_folderPrefix) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing _firebaseFunction_fileName or _firebaseFunction_folderPrefix."
       );
     }
 
@@ -40,12 +55,13 @@ export const saveAppsFlyerData = onCall(
     const mm = String(now.getMonth() + 1).padStart(2, "0");
     const dd = String(now.getDate()).padStart(2, "0");
     const datePath = `${yyyy}${mm}${dd}`;
-    const uniqueId = uuidv4();
-    const filePath = `AppsFlyer/${datePath}/${uniqueId}.json`;
+    const timestamp = Date.now();
+    const fileName = `${_firebaseFunction_fileName}_${timestamp}.json`;
+    const filePath = `${_firebaseFunction_folderPrefix}/${datePath}/${fileName}`;
 
-    logger.log("Saving AppsFlyer data to:", filePath);
+    logger.log("Saving Attribution data to:", filePath);
 
-    await bucket.file(filePath).save(JSON.stringify(data), {
+    await bucket.file(filePath).save(JSON.stringify(payload), {
       contentType: "application/json",
     });
 
