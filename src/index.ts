@@ -5,10 +5,10 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 if (!process.env.TARGET_BUCKET) {
-  console.warn("Warning: TARGET_BUCKET is not set in environment variables.");
+  throw new Error("TARGET_BUCKET is not set in environment variables.");
 }
 if (!("ENFORCE_APP_CHECK" in process.env)) {
-  console.warn("Warning: ENFORCE_APP_CHECK is not set in environment variables. Defaulting to false.");
+  throw new Error("ENFORCE_APP_CHECK is not set in environment variables.");
 }
 
 admin.initializeApp();
@@ -29,7 +29,7 @@ export const saveAttributionData = onCall(
       );
     }
 
-    const { _firebaseFunction_fileName, _firebaseFunction_folderPrefix, ...payload } = data;
+    const { _firebaseFunction_fileName, _firebaseFunction_folderPrefix, _appId, _userPseudoID, ...payload } = data;
 
     if (!_firebaseFunction_fileName || !_firebaseFunction_folderPrefix) {
       throw new HttpsError(
@@ -38,6 +38,31 @@ export const saveAttributionData = onCall(
       );
     }
 
+    if (!_userPseudoID || typeof _userPseudoID !== "string") {
+        throw new HttpsError(
+            "invalid-argument",
+            "Missing or invalid userPseudoId."
+        );
+    }
+
+    const normalizedUserId = _userPseudoID.toUpperCase().replace(/-/g, "");
+    const appId = _appId || process.env.APP_ID || "unknown_app";
+
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const hh = String(now.getHours()).padStart(2, "0");
+    const min = String(now.getMinutes()).padStart(2, "0");
+    const ss = String(now.getSeconds()).padStart(2, "0");
+    const datePath = `${yyyy}${mm}${dd}`;
+    const timestamp = `${yyyy}${mm}${dd}T${hh}${min}${ss}`;
+
+    const fileName = `${normalizedUserId}-${timestamp}.json`;
+    const filePath = `${_firebaseFunction_folderPrefix}/${datePath}/${appId}/${fileName}`;
+
+    logger.log("Saving Attribution data to:", filePath);
+  
     const bucketName = process.env.TARGET_BUCKET;
 
     console.log("TARGET_BUCKET:", bucketName);
@@ -50,16 +75,29 @@ export const saveAttributionData = onCall(
     }
 
     const bucket = admin.storage().bucket(bucketName);
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    const datePath = `${yyyy}${mm}${dd}`;
-    const timestamp = Date.now();
-    const fileName = `${_firebaseFunction_fileName}_${timestamp}.json`;
-    const filePath = `${_firebaseFunction_folderPrefix}/${datePath}/${fileName}`;
 
-    logger.log("Saving Attribution data to:", filePath);
+    try {
+      // Attempt a dummy write to check permissions
+      await bucket.file(`.permission_check/${Date.now()}.tmp`).save("test", {
+        contentType: "text/plain",
+        resumable: false,
+      });
+    } catch (err: any) {
+      logger.error("Permission check failed:", err);
+      const errorCode = err?.code || err?.status;
+
+      if (errorCode === 403 || errorCode === 401 || err?.message?.includes("permission")) {
+        throw new HttpsError(
+          "permission-denied",
+          "The project does not have permission to write to the specified bucket."
+        );
+      }
+
+      throw new HttpsError(
+        "internal",
+        "Failed to verify bucket access. Reason: " + (err?.message || "Unknown error")
+      );
+    }
 
     await bucket.file(filePath).save(JSON.stringify(payload), {
       contentType: "application/json",
