@@ -1,10 +1,10 @@
-# Firebase Function Attribution (Data Upload)
+# Firebase Function Save Payload (Data Upload)
 
-This module provides a Swift utility for uploading attribution data to a Firebase Cloud Function.
+This module provides a Firebase Cloud Function for uploading a payload to a Google Cloud Bucket.
 
 ## Swift Integration
 
-You can use this struct in your iOS app to send conversion data to your Firebase Cloud Function (`saveAttributionData`), which saves the payload into a Cloud Storage bucket.
+You can use this struct in your iOS app to send conversion data to your Firebase Cloud Function (`savePayload`), which saves the payload into a Cloud Storage bucket.
 
 ### Sample Usage
 
@@ -21,15 +21,17 @@ public struct FirebaseFunctionAttribution {
     }()
 
     public static let payload: [String: Any] = [
-        "installDate": "2025-04-03",
-        "campaign": "spring_sale",
-        "userId": "12345",
-        "_firebaseFunction_fileName": "appsflyer_conversion_data",
-        "_firebaseFunction_folderPrefix": "attribution_data"
+        "payload": [
+            "installDate": "2025-04-03",
+            "campaign": "spring_sale",
+            "userId": "12345"
+        ],
+        "userPseudoID": "54321",
+        "folderPrefix": "attribution_data"
     ]
     
     public static func onConversionDataSuccess(_ data: [String: Any]) {
-        functions.httpsCallable("saveAttributionData").call(data) { result, error in
+        functions.httpsCallable("savePayload").call(data) { result, error in
             if let error = error as NSError? {
                 print("Cloud Function error: \(error.localizedDescription)")
                 print("Error details: \(error.userInfo)")
@@ -48,15 +50,16 @@ public struct FirebaseFunctionAttribution {
 
 ### Notes
 
-- The Cloud Function **requires** `_firebaseFunction_fileName` and `_firebaseFunction_folderPrefix` to build the destination path in Cloud Storage.
-- This function stores JSON data at: `gs://<TARGET_BUCKET>/<folderPrefix>/YYYYMMDD/<fileName>.json`.
+- The Cloud Function **requires** `userPseudoID` and `folderPrefix` to build the destination path in Cloud Storage, as shown in the Swift example above.
+- The `payload` dictionary must be provided and may include fields like `installDate`, `campaign`, and `userId`, or any other payload you want to store.
+- The JSON payload will be stored at: `gs://<TARGET_BUCKET>/<folderPrefix>/YYYYMMDD/<appId>/<userPseudoID>-<timestamp>.json`.
 - This sample uses the emulator (`localhost:5001`) for development. Remove the `useEmulator` line for production use.
 
 ## Cloud Function Configuration
 
 Make sure you have set the `TARGET_BUCKET` environment variable for your Firebase function. This determines where the uploaded file will be stored in Cloud Storage.
 
-The Cloud Function extracts and separates metadata (`_firebaseFunction_fileName`, `_firebaseFunction_folderPrefix`) from the attribution payload before storing it.
+The Cloud Function expects a single dictionary containing both metadata (e.g., `userPseudoID`, `folderPrefix`) and a nested `payload` dictionary. These are combined in the request body and processed together.
 
 ---
 
@@ -90,7 +93,6 @@ This repo is designed to be deployed across **multiple Firebase projects**.
 
    ```env
    TARGET_BUCKET=your-bucket-name
-   ENFORCE_APP_CHECK=true
    ```
 
 4. **Link to Your Firebase Project**
@@ -116,7 +118,6 @@ Instead of using a `.env` file, you can configure project secrets securely:
 
 ```bash
 firebase functions:secrets:set TARGET_BUCKET
-firebase functions:secrets:set ENFORCE_APP_CHECK
 ```
 
 ---
