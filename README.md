@@ -72,7 +72,7 @@ This repo is designed to be deployed across **multiple Firebase projects**.
 1. **Clone the Repo**
 
    ```bash
-   git clone git@github.com:TechArtists/firebase-function-save-payloads.git
+   git clone git@github.com:TechArtists/backend-firebase-function-save-payload.git
    ```
 
 2. **Install Dependencies**
