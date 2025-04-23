@@ -24,11 +24,18 @@ export const savePayload=onCall(
     if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
       throw new HttpsError(
         "invalid-argument",
-        "Payload must be a non-empty JSON object."
+        "Data must be a non-empty JSON object."
       );
     }
     
     const { folderPrefix, userPseudoID, payload } = data;
+
+    if (!payload || typeof payload !== "object" || Object.keys(payload).length === 0) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Payload must be a non-empty JSON object."
+      );
+    }
 
     if (!folderPrefix || !userPseudoID) {
       throw new HttpsError(
@@ -58,9 +65,7 @@ export const savePayload=onCall(
 
     await checkBucketWritePermission(bucket);
 
-    const jsonLines = Array.isArray(payload)
-    ? payload.map((item) => JSON.stringify(item)).join("\n")
-    : JSON.stringify(payload);
+    const jsonLines = JSON.stringify(JSON.parse(JSON.stringify(payload, Object.keys(payload).sort())));
   
     await bucket.file(filePath).save(jsonLines, {
       contentType: "application/json",
