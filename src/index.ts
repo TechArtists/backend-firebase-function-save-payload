@@ -3,8 +3,12 @@ import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import * as dotenv from "dotenv";
 import { Bucket } from "@google-cloud/storage";
+import { firebase_v1beta1, google } from "googleapis";
+import { OAuth2Client } from "google-auth-library";
 
 dotenv.config();
+
+const appMetadataCache = new Map<string, { platformId: string }>();
 
 if (!process.env.TARGET_BUCKET) {
   throw new Error("TARGET_BUCKET is not set in environment variables.");
@@ -29,6 +33,27 @@ export const savePayload=onCall(
     }
     
     const { folderPrefix, userPseudoID, payload } = data;
+    const appCheckToken = request.rawRequest.headers['x-firebase-appcheck'] as string;
+
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === "true";
+    let firebaseAppId = "emulator_app_id";
+
+    if (isEmulator) {
+      logger.debug("Running in emulator, skipping App Check verification.");
+      firebaseAppId = "emulator_app_id";
+    } else {
+      if (!appCheckToken || typeof appCheckToken !== "string") {
+        throw new HttpsError("unauthenticated", "App Check token is missing or malformed.");
+      }
+    
+      try {
+        const decodedAppCheckToken = await admin.appCheck().verifyToken(appCheckToken);
+        firebaseAppId = decodedAppCheckToken.appId;
+      } catch (err) {
+        logger.error("App Check token verification failed:", err);
+        throw new HttpsError("unauthenticated", "Invalid App Check token.");
+      }
+    }
 
     if (!payload || typeof payload !== "object" || Object.keys(payload).length === 0) {
       throw new HttpsError(
@@ -44,9 +69,16 @@ export const savePayload=onCall(
       );
     }
 
-    const appId = process.env.APP_ID || "unknown_app";
+    const projectId = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT;
+    if (!projectId) {
+      logger.error("Project ID is not set. Ensure GCP_PROJECT or GCLOUD_PROJECT is defined in the environment.");
+      throw new HttpsError("internal", "Missing project ID configuration.");
+    }
+    
+    const appInfo = await mapAppIdToAppDetails(projectId!, firebaseAppId);
+    const platformId = appInfo.platformId;
 
-    const filePath = generateFilePath(userPseudoID, folderPrefix, appId);
+    const filePath = generateFilePath(userPseudoID, folderPrefix, platformId);
 
     logger.log("Saving Payload data to:", filePath);
   
@@ -74,6 +106,43 @@ export const savePayload=onCall(
     return {success: true, filePath: `gs://${bucketName}/${filePath}`};
   }
 );
+
+async function mapAppIdToAppDetails(projectId: string, firebaseAppId: string) {
+  if (appMetadataCache.has(firebaseAppId)) {
+    return appMetadataCache.get(firebaseAppId)!;
+  }
+
+  const auth = new google.auth.GoogleAuth({
+    scopes: ["https://www.googleapis.com/auth/firebase"],
+  });
+  
+  const authClient = await auth.getClient();
+  
+  const firebase = new firebase_v1beta1.Firebase({
+    auth: authClient as OAuth2Client,
+  });
+
+  const [androidAppsRes, iosAppsRes] = await Promise.all([
+    firebase.projects.androidApps.list({ parent: `projects/${projectId}` }),
+    firebase.projects.iosApps.list({ parent: `projects/${projectId}` }),
+  ]);
+
+  const androidApp = androidAppsRes.data.apps?.find(app => app.appId === firebaseAppId);
+  if (androidApp) {
+    const result = { platformId: androidApp.packageName! };
+    appMetadataCache.set(firebaseAppId, result);
+    return result;
+  }
+
+  const iosApp = iosAppsRes.data.apps?.find(app => app.appId === firebaseAppId);
+  if (iosApp) {
+    const result = { platformId: iosApp.bundleId! };
+    appMetadataCache.set(firebaseAppId, result);
+    return result;
+  }
+
+  return { platformId: "unknown_platform_id" };
+}
 
 async function checkBucketWritePermission(bucket: Bucket): Promise<void> {
   const tempFilePath = `.permission_check/${Date.now()}.tmp`;
