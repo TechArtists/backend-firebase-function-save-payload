@@ -2,9 +2,9 @@ import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import * as dotenv from "dotenv";
-import { Bucket } from "@google-cloud/storage";
-import { firebase_v1beta1, google } from "googleapis";
-import { OAuth2Client } from "google-auth-library";
+import {Bucket} from "@google-cloud/storage";
+import {firebase_v1beta1, google} from "googleapis";
+import {OAuth2Client} from "google-auth-library";
 
 dotenv.config();
 
@@ -31,9 +31,9 @@ export const savePayload=onCall(
         "Data must be a non-empty JSON object."
       );
     }
-    
-    const { folderPrefix, userPseudoID, payload } = data;
-    const appCheckToken = request.rawRequest.headers['x-firebase-appcheck'] as string;
+
+    const {folderPrefix, userPseudoID, payload} = data;
+    const appCheckToken = request.rawRequest.headers["x-firebase-appcheck"] as string;
 
     const isEmulator = process.env.FUNCTIONS_EMULATOR === "true";
     let firebaseAppId = "emulator_app_id";
@@ -45,7 +45,7 @@ export const savePayload=onCall(
       if (!appCheckToken || typeof appCheckToken !== "string") {
         throw new HttpsError("unauthenticated", "App Check token is missing or malformed.");
       }
-    
+
       try {
         const decodedAppCheckToken = await admin.appCheck().verifyToken(appCheckToken);
         firebaseAppId = decodedAppCheckToken.appId;
@@ -70,18 +70,19 @@ export const savePayload=onCall(
     }
 
     const projectId = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT;
+
     if (!projectId) {
       logger.error("Project ID is not set. Ensure GCP_PROJECT or GCLOUD_PROJECT is defined in the environment.");
       throw new HttpsError("internal", "Missing project ID configuration.");
     }
-    
+
     const appInfo = await mapAppIdToAppDetails(projectId!, firebaseAppId);
     const platformId = appInfo.platformId;
 
     const filePath = generateFilePath(userPseudoID, folderPrefix, platformId);
 
     logger.log("Saving Payload data to:", filePath);
-  
+
     const bucketName = process.env.TARGET_BUCKET;
 
     console.log("TARGET_BUCKET:", bucketName);
@@ -98,7 +99,7 @@ export const savePayload=onCall(
     await checkBucketWritePermission(bucket);
 
     const jsonLines = JSON.stringify(JSON.parse(JSON.stringify(payload, Object.keys(payload).sort())));
-  
+
     await bucket.file(filePath).save(jsonLines, {
       contentType: "application/json",
     });
@@ -115,33 +116,33 @@ async function mapAppIdToAppDetails(projectId: string, firebaseAppId: string) {
   const auth = new google.auth.GoogleAuth({
     scopes: ["https://www.googleapis.com/auth/firebase"],
   });
-  
+
   const authClient = await auth.getClient();
-  
+
   const firebase = new firebase_v1beta1.Firebase({
     auth: authClient as OAuth2Client,
   });
 
   const [androidAppsRes, iosAppsRes] = await Promise.all([
-    firebase.projects.androidApps.list({ parent: `projects/${projectId}` }),
-    firebase.projects.iosApps.list({ parent: `projects/${projectId}` }),
+    firebase.projects.androidApps.list({parent: `projects/${projectId}`}),
+    firebase.projects.iosApps.list({parent: `projects/${projectId}`}),
   ]);
 
-  const androidApp = androidAppsRes.data.apps?.find(app => app.appId === firebaseAppId);
+  const androidApp = androidAppsRes.data.apps?.find((app) => app.appId === firebaseAppId);
   if (androidApp) {
-    const result = { platformId: androidApp.packageName! };
+    const result = {platformId: androidApp.packageName!};
     appMetadataCache.set(firebaseAppId, result);
     return result;
   }
 
-  const iosApp = iosAppsRes.data.apps?.find(app => app.appId === firebaseAppId);
+  const iosApp = iosAppsRes.data.apps?.find((app) => app.appId === firebaseAppId);
   if (iosApp) {
-    const result = { platformId: iosApp.bundleId! };
+    const result = {platformId: iosApp.bundleId!};
     appMetadataCache.set(firebaseAppId, result);
     return result;
   }
 
-  return { platformId: "unknown_platform_id" };
+  return {platformId: "unknown_platform_id"};
 }
 
 async function checkBucketWritePermission(bucket: Bucket): Promise<void> {

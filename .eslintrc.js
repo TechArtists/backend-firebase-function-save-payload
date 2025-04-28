@@ -29,5 +29,10 @@ module.exports = {
     "quotes": ["error", "double"],
     "import/no-unresolved": 0,
     "indent": ["error", 2],
+    "max-len": ["warn", {"code": 120}],
+    "require-jsdoc": "off",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "camelcase": ["warn", {"allow": ["firebase_v1beta1"]}],
+    "@typescript-eslint/no-explicit-any": "warn",
   },
 };
