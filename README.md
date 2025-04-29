@@ -1,6 +1,17 @@
 # Firebase Function Save Payload (Data Upload)
 
-This module provides a Firebase Cloud Function for uploading a payload to a Google Cloud Bucket.
+This module provides a Firebase Cloud Function for uploading a JSON payload to a Google Cloud Bucket with this format:
+   `gs://<TARGET_BUCKET>/<folderPrefix>/<YYYYMMDD>/<appID>/<userPseudoID>-<timestamp>.json`
+
+where:
+
+- `<TARGET_BUCKET>` is defined during the deploy
+- `<folderPrefix>`, `<userPseudoID`> are app provided parameters
+- `<appID>` is inserted by the server based on the Firebase app setings and:
+  - for Android, always `package_name`
+  - for iOS, it first tries the `App Store ID`. If that's not available, then it falls back to the `bundle ID`
+- `<YYYMMDD>` & `<timestamp>` are added by the server in ISO8601 format (e.g. `20250429T115622`)
+
 
 ## Swift Integration
 
@@ -93,7 +104,6 @@ object FirebaseFunctionSavePayload {
 
 - The Cloud Function **requires** `userPseudoID` and `folderPrefix` to build the destination path in Cloud Storage, as shown in the Swift example above.
 - The `payload` dictionary must be provided and may include fields like `installDate`, `campaign`, and `userId`, or any other payload you want to store.
-- The JSON payload will be stored at: `gs://<TARGET_BUCKET>/<folderPrefix>/YYYYMMDD/<appId>/<userPseudoID>-<timestamp>.json`.
 - This sample uses the emulator (`localhost:5001`) for development. Remove the `useEmulator` line for production use.
 
 ## Cloud Function Configuration
