@@ -7,9 +7,9 @@ where:
 
 - `<TARGET_BUCKET>` is defined during the deploy
 - `<folderPrefix>`, `<userPseudoID`> are app provided parameters
-- `<appID>` is inserted by the server based on the Firebase app setings and:
-  - for Android, always `package_name`
-  - for iOS, it first tries the `App Store ID`. If that's not available, then it falls back to the `bundle ID`
+- `<appID>` is inserted by the server based on the Firebase app settings and:
+  - for Android, it prefixes with `ANDROID-` followed by the `package_name`
+  - for iOS, it prefixes with `IOS-` followed by the `App Store ID` if available; otherwise, the `bundle ID`
 - `<YYYMMDD>` & `<timestamp>` are added by the server in ISO8601 format (e.g. `20250429T115622`)
 
 

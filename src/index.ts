@@ -130,14 +130,15 @@ async function mapAppIdToAppDetails(projectId: string, firebaseAppId: string) {
 
   const androidApp = androidAppsRes.data.apps?.find((app) => app.appId === firebaseAppId);
   if (androidApp) {
-    const result = {platformId: androidApp.packageName!};
+    const result = {platformId: `ANDROID-${androidApp.packageName!}`};
     appMetadataCache.set(firebaseAppId, result);
     return result;
   }
 
   const iosApp = iosAppsRes.data.apps?.find((app) => app.appId === firebaseAppId);
   if (iosApp) {
-    const platformId = iosApp.appStoreId ? iosApp.appStoreId : iosApp.bundleId!;
+    const rawId = iosApp.appStoreId ? iosApp.appStoreId : iosApp.bundleId!;
+    const platformId = `IOS-${rawId}`;
     const result = {platformId: platformId};
     appMetadataCache.set(firebaseAppId, result);
     return result;
