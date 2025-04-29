@@ -217,10 +217,74 @@ Make sure your `.env` is set up for local testing.
 
 ---
 
-### 🔒 App Check Enforcement
+## 🔒 Setting Up Firebase and App Check (iOS)
 
-If your function enforces App Check, make sure your iOS app is properly configured with App Check tokens when calling `savePayload`.
+Before calling the `savePayload` Cloud Function, initialize Firebase and App Check in your app.
 
-During development, you can use `AppCheckDebugProviderFactory()` on simulators to bypass verification.
+Example setup:
 
----
+```swift
+import FirebaseCore
+import FirebaseAppCheck
+
+// App Check Provider Factory for devices
+class AppAttestProviderFactory: NSObject, AppCheckProviderFactory {
+    func createProvider(with app: FirebaseApp) -> AppCheckProvider? {
+        AppAttestProvider(app: app)
+    }
+}
+
+private func setupFirebase() {
+    #if targetEnvironment(simulator)
+    // Use debug provider for simulator
+    AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
+    #else
+    // Use App Attest on real devices
+    AppCheck.setAppCheckProviderFactory(AppAttestProviderFactory())
+    #endif
+
+    // Initialize Firebase
+    FirebaseApp.configure()
+}
+```
+
+> ℹ️ **Simulator**: Use `AppCheckDebugProviderFactory()` to bypass App Check during simulator testing.
+> ℹ️ **Real Devices**: Ensure App Attest is enabled in your Firebase Console for production use.
+
+If App Check is not configured properly, Cloud Function calls may fail with `unauthenticated` errors.
+
+## 🔒 Setting Up Firebase and App Check (Android)
+
+Before calling the `savePayload` Cloud Function, initialize Firebase and App Check in your Android app.
+
+Example setup:
+
+```kotlin
+import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
+
+fun setupFirebase(application: Application) {
+    FirebaseApp.initializeApp(application)
+
+    val firebaseAppCheck = FirebaseAppCheck.getInstance()
+
+    if (BuildConfig.DEBUG) {
+        // Use Debug provider for local builds
+        firebaseAppCheck.installAppCheckProviderFactory(
+            DebugAppCheckProviderFactory.getInstance()
+        )
+    } else {
+        // Use Play Integrity on real devices
+        firebaseAppCheck.installAppCheckProviderFactory(
+            PlayIntegrityAppCheckProviderFactory.getInstance()
+        )
+    }
+}
+```
+
+> ℹ️ **Simulator / Emulator**: Use `DebugAppCheckProviderFactory` when testing on Android emulators.
+> ℹ️ **Real Devices**: Ensure Play Integrity is enabled in your Firebase Console for production use.
+
+If App Check is not configured properly, Cloud Function calls may fail with `unauthenticated` errors.
