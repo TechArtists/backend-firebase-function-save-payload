@@ -18,7 +18,7 @@ public enum FirebaseFunctionSavePayload {
         return instance
     }()
 
-    public static func onConversionDataSuccess( payload: [String: Any], userPseudoID: String, folderPrefix: String) {
+    public static func savePayload( folderPrefix: String, userPseudoID: String, payload: [String: Any]) {
         let payloadToSend: [String: Any] = [
             "payload": payload,
             "userPseudoID": userPseudoID,
@@ -55,10 +55,10 @@ object FirebaseFunctionSavePayload {
         FirebaseFunctions.getInstance()
     }
 
-    fun onConversionDataSuccess(
-        payload: Map<String, Any>,
+    fun savePayload(
+        folderPrefix: String,
         userPseudoID: String,
-        folderPrefix: String
+        payload: Map<String, Any>
     ) {
         val payloadToSend = mapOf(
             "payload" to payload,
