@@ -112,6 +112,12 @@ Make sure you have set the `TARGET_BUCKET` environment variable for your Firebas
 
 The Cloud Function expects a single dictionary containing both metadata (e.g., `userPseudoID`, `folderPrefix`) and a nested `payload` dictionary. These are combined in the request body and processed together.
 
+The `savePayload` Cloud Function expects the incoming request body to be a dictionary containing:
+
+- `userPseudoID`: A unique user identifier, provided by the Firebase SDK on the client side.
+- `folderPrefix`: A constant string that defines the subfolder structure within the bucket.
+- `payload`: A nested dictionary containing the actual data you want to store (e.g., install dates, campaigns, user IDs).
+
 ---
 
 ### ☁️ Cloud Storage Permissions

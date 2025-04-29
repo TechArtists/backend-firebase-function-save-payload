@@ -137,7 +137,8 @@ async function mapAppIdToAppDetails(projectId: string, firebaseAppId: string) {
 
   const iosApp = iosAppsRes.data.apps?.find((app) => app.appId === firebaseAppId);
   if (iosApp) {
-    const result = {platformId: iosApp.bundleId!};
+    const platformId = iosApp.appStoreId ? iosApp.appStoreId : iosApp.bundleId!;
+    const result = {platformId: platformId};
     appMetadataCache.set(firebaseAppId, result);
     return result;
   }
