@@ -12,35 +12,28 @@ You can use this struct in your iOS app to send conversion data to your Firebase
 import FirebaseCore
 import FirebaseFunctions
 
-public struct FirebaseFunctionAttribution {
-    
-    public static let functions: Functions = {
+public enum FirebaseFunctionSavePayload {
+    private static let functions: Functions = {
         let instance = Functions.functions()
-        instance.useEmulator(withHost: "localhost", port: 5001) // 🔹 Remove this line for production builds.
         return instance
     }()
 
-    public static let payload: [String: Any] = [
-        "payload": [
-            "installDate": "2025-04-03",
-            "campaign": "spring_sale",
-            "userId": "12345"
-        ],
-        "userPseudoID": "54321",
-        "folderPrefix": "attribution_data"
-    ]
-    
-    public static func onConversionDataSuccess(_ data: [String: Any]) {
-        functions.httpsCallable("savePayload").call(data) { result, error in
+    public static func onConversionDataSuccess( payload: [String: Any], userPseudoID: String, folderPrefix: String) {
+        let payloadToSend: [String: Any] = [
+            "payload": payload,
+            "userPseudoID": userPseudoID,
+            "folderPrefix": folderPrefix
+        ]
+        functions.httpsCallable("savePayload").call(payloadToSend) { result, error in
             if let error = error as NSError? {
-                print("Cloud Function error: \(error.localizedDescription)")
-                print("Error details: \(error.userInfo)")
+                Logger.analytics.error("Cloud Function error: \(error.localizedDescription)")
+                Logger.analytics.error("Error details: \(error.userInfo)")
             } else if let resultData = result?.data as? [String: Any] {
                 if let success = resultData["success"] as? Bool, success {
-                    print("AppsFlyer data uploaded successfully.")
+                    Logger.analytics.info("AppsFlyer data uploaded successfully.")
                 }
                 if let path = resultData["filePath"] as? String {
-                    print("File stored at: \(path)")
+                    Logger.analytics.info("File stored at: \(path)")
                 }
             }
         }
@@ -53,40 +46,42 @@ public struct FirebaseFunctionAttribution {
 ### Sample Usage (Android)
 
 ```kotlin
+import android.util.Log
 import com.google.firebase.functions.FirebaseFunctions
 
-object FirebaseFunctionAttribution {
+object FirebaseFunctionSavePayload {
 
     private val functions: FirebaseFunctions by lazy {
-        val instance = FirebaseFunctions.getInstance()
-        // instance.useEmulator("10.0.2.2", 5001) // 🔹 Uncomment this line for local emulator testing
-        instance
+        FirebaseFunctions.getInstance()
     }
 
-    private val payload: Map<String, Any> = mapOf(
-        "payload" to mapOf(
-            "installDate" to "2025-04-03",
-            "campaign" to "spring_sale",
-            "userId" to "12345"
-        ),
-        "userPseudoID" to "54321",
-        "folderPrefix" to "attribution_data"
-    )
+    fun onConversionDataSuccess(
+        payload: Map<String, Any>,
+        userPseudoID: String,
+        folderPrefix: String
+    ) {
+        val payloadToSend = mapOf(
+            "payload" to payload,
+            "userPseudoID" to userPseudoID,
+            "folderPrefix" to folderPrefix
+        )
 
-    fun onConversionDataSuccess(data: Map<String, Any> = payload) {
         functions
             .getHttpsCallable("savePayload")
-            .call(data)
+            .call(payloadToSend)
             .addOnSuccessListener { result ->
                 val resultData = result.data as? Map<*, *>
                 if (resultData?.get("success") == true) {
-                    println("AppsFlyer data uploaded successfully.")
+                    Log.i("Analytics", "AppsFlyer data uploaded successfully.")
                 }
                 val path = resultData?.get("filePath")
-                println("File stored at: $path")
+                if (path != null) {
+                    Log.i("Analytics", "File stored at: $path")
+                }
             }
             .addOnFailureListener { e ->
-                println("Cloud Function error: ${e.message}")
+                Log.e("Analytics", "Cloud Function error: ${e.localizedMessage}")
+                Log.e("Analytics", "Error details: ${e}")
             }
     }
 }
