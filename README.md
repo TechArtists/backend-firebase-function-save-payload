@@ -162,7 +162,7 @@ This repo is designed to be deployed across **multiple Firebase projects**.
    Create your own `.env` file from the example:
 
    ```bash
-   cp .env.example .env
+   touch .env
    ```
 
    Then set your Firebase project-specific variables:
@@ -183,7 +183,7 @@ This repo is designed to be deployed across **multiple Firebase projects**.
    Then deploy with:
 
    ```bash
-   firebase deploy --only functions
+   firebase deploy --only functions:savePayload
    ```
 
 ---
@@ -203,7 +203,6 @@ firebase functions:secrets:set TARGET_BUCKET
 ```
 functions/
 ├── src/                  # TypeScript source files
-├── .env.example          # Sample environment file
 ├── .gitignore
 ├── package.json
 └── tsconfig.json
