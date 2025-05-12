@@ -145,48 +145,68 @@ This repo is designed to be deployed across **multiple Firebase projects**.
 
 ### 🚀 Getting Started
 
+This repo is designed to be **added to an existing Firebase project**, not deployed standalone.
+
+---
+
 1. **Clone the Repo**
 
    ```bash
-   git clone git@github.com:TechArtists/backend-firebase-function-save-payload.git
+   git clone https://github.com/TechArtists/backend-firebase-function-save-payload.git
    ```
 
-2. **Install Dependencies**
+2. **Integrate into Your Firebase Project**
+
+   Inside your Firebase project root:
 
    ```bash
+   cd your-firebase-project
+   ```
+
+   Copy the contents of this repo into your `functions/` folder.
+
+3. **Install Dependencies**
+
+   ```bash
+   cd functions
    npm install
    ```
 
-3. **Set Up Your Environment**
+4. **Set Up Your Environment**
 
-   Create your own `.env` file from the example:
+   Create your own `.env` file:
 
    ```bash
-   cp .env.example .env
+   touch .env
    ```
 
-   Then set your Firebase project-specific variables:
+   Then add your Firebase project-specific variables:
 
    ```env
    TARGET_BUCKET=your-bucket-name
    ```
 
-4. **Link to Your Firebase Project**
+   Or, alternatively, use Firebase Functions config:
 
-   Log in and set up Firebase CLI:
+   ```bash
+   firebase functions:config:set env.target_bucket="your-bucket-name"
+   ```
+
+5. **Link to Your Firebase Project**
+
+   Log in and set up the Firebase CLI:
 
    ```bash
    firebase login
    firebase use --add
    ```
 
-   Then deploy with:
+6. **Build and Deploy**
 
    ```bash
-   firebase deploy --only functions
+   npm run build
+   firebase deploy --only functions:savePayload
    ```
-
----
 
 ### 🔐 (Optional) Use Firebase Secrets
 
@@ -203,7 +223,6 @@ firebase functions:secrets:set TARGET_BUCKET
 ```
 functions/
 ├── src/                  # TypeScript source files
-├── .env.example          # Sample environment file
 ├── .gitignore
 ├── package.json
 └── tsconfig.json
