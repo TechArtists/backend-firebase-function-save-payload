@@ -16,7 +16,96 @@ if (!process.env.TARGET_BUCKET) {
 
 admin.initializeApp();
 console.log("Firebase admin initialized.");
+export const damaTest=onCall(
+  {
+    enforceAppCheck: true,
+    secrets: [],
+  },
+  async (request) => {
+    const data = request.data;
 
+    if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Data must be a non-empty JSON object."
+      );
+    }
+
+    const {folderPrefix, userPseudoID, payload} = data;
+    const appCheckToken = request.rawRequest.headers["x-firebase-appcheck"] as string;
+
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === "true";
+    let firebaseAppId = "emulator_app_id";
+
+    if (isEmulator) {
+      logger.debug("Running in emulator, skipping App Check verification.");
+      firebaseAppId = "emulator_app_id";
+    } else {
+      if (!appCheckToken || typeof appCheckToken !== "string") {
+        throw new HttpsError("unauthenticated", "App Check token is missing or malformed.");
+      }
+
+      try {
+        const decodedAppCheckToken = await admin.appCheck().verifyToken(appCheckToken);
+        firebaseAppId = decodedAppCheckToken.appId;
+      } catch (err) {
+        logger.error("App Check token verification failed:", err);
+        throw new HttpsError("unauthenticated", "Invalid App Check token.");
+      }
+    }
+
+    if (!payload || typeof payload !== "object" || Object.keys(payload).length === 0) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Payload must be a non-empty JSON object."
+      );
+    }
+
+    if (!folderPrefix || !userPseudoID) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing folderPrefix or userPseudoID in the payload."
+      );
+    }
+
+    const projectId = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT;
+
+    if (!projectId) {
+      logger.error("Project ID is not set. Ensure GCP_PROJECT or GCLOUD_PROJECT is defined in the environment.");
+      throw new HttpsError("internal", "Missing project ID configuration.");
+    }
+
+    const appInfo = await mapAppIdToAppDetails(projectId!, firebaseAppId);
+    const platformId = appInfo.platformId;
+
+    const filePath = generateFilePath(userPseudoID, folderPrefix, platformId);
+
+    logger.log("Saving Payload data to:", filePath);
+
+    const bucketName = process.env.TARGET_BUCKET;
+
+    console.log("TARGET_BUCKET:", bucketName);
+
+    if (!bucketName) {
+      throw new HttpsError(
+        "internal",
+        "TARGET_BUCKET environment variable is not set."
+      );
+    }
+
+    const bucket = admin.storage().bucket(bucketName);
+
+    await checkBucketWritePermission(bucket);
+
+    const jsonLines = JSON.stringify(JSON.parse(JSON.stringify(payload, Object.keys(payload).sort())));
+
+    await bucket.file(filePath).save(jsonLines, {
+      contentType: "application/json",
+    });
+
+    return {success: true, filePath: `gs://${bucketName}/${filePath}`};
+  }
+);
 export const savePayload=onCall(
   {
     enforceAppCheck: true,
