@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "payload-functions",
+    "test-app-core": "test-app-core",
+    "fitnessai-api-prod": "fitnessai-api"
+  },
+  "targets": {},
+  "etags": {}
+}
