@@ -18,6 +18,7 @@ admin.initializeApp();
 console.log("Firebase admin initialized.");
 export const damaTest=onCall(
   {
+    serviceAccount: "firebase-bucket-deploy@appex-data-imports.iam.gserviceaccount.com",
     enforceAppCheck: true,
     secrets: [],
   },

@@ -1,4 +1,4 @@
-name: Deploy Firebase Functions on push
+name: Deploy Firebase Functions
 
 on:
     workflow_dispatch:
