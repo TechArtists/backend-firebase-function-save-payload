@@ -1,27 +1,37 @@
 name: Deploy Firebase Functions
 
 on:
-    workflow_dispatch:
-      inputs:
-        target-bucket:
-          type: string
-          required: true
-        function-name:
-            type: string
-            required: true
-        projects:
-          description: "Comma-separated list of projects"
-          required: true
-          type: string
-  
+  workflow_dispatch:
+    inputs:
+      target-bucket:
+        type: string
+        required: true
+      function-name:
+        type: string
+        required: true
+      projects:
+        description: "Comma-separated list of projects"
+        required: true
+        type: string
 
 jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Generate matrix from input
+        id: set-matrix
+        run: |
+          projects="${{ github.event.inputs.projects }}"
+          projects_json=$(echo "$projects" | jq -R 'split(",")' | jq -c '{project: .}')
+          echo "matrix=$projects_json" >> $GITHUB_OUTPUT
+
   deploy:
+    needs: prepare-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        project: ${{ inputs.projects && inputs.projects != '' && inputs.projects.split(',') || '' }}
-
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -44,7 +54,7 @@ jobs:
           cd functions
           npm install
 
-      - name: Deploy Firebase Functions
+      - name: Deploy Firebase Functions to project ${{ matrix.project }}
         run: |
           echo '${{ secrets.GCP_SA_KEY }}' > $HOME/gcp-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcp-key.json"
