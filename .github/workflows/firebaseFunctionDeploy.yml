@@ -9,30 +9,14 @@ on:
       function-name:
         type: string
         required: true
-      projects:
-        description: "Comma-separated list of projects"
-        required: true
-        type: string
 
 jobs:
-  prepare-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Generate matrix from input
-        id: set-matrix
-        run: |
-          projects="${{ github.event.inputs.projects }}"
-          projects_json=$(echo "$projects" | jq -R 'split(",")' | jq -c '{project: .}')
-          echo "matrix=$projects_json" >> $GITHUB_OUTPUT
-
   deploy:
-    needs: prepare-matrix
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+      matrix:
+        project: [fitnessai-api, allstays-appex]  # hardcoded for now
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
