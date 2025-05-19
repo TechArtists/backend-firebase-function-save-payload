@@ -20,7 +20,6 @@ export const damaTest=onCall(
   {
     enforceAppCheck: true,
     secrets: [],
-    serviceAccount: "firebase-runtime@appex-data-imports.iam.gserviceaccount.com",
   },
   async (request) => {
     const data = request.data;
