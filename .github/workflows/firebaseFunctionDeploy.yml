@@ -9,14 +9,18 @@ on:
         function-name:
             type: string
             required: true
-        project:
-            type: string
-            required: true
+        projects:
+          description: "Comma-separated list of projects"
+          required: true
+          type: string
   
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: ${{ fromJson('[''"' + inputs.projects.replace(',', '\",\"') + '"'']') }}
 
     steps:
       - name: Checkout repo
@@ -44,4 +48,4 @@ jobs:
         run: |
           echo '${{ secrets.GCP_SA_KEY }}' > $HOME/gcp-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcp-key.json"
-          firebase deploy --only functions:${{ inputs.function-name }} --project=${{ inputs.project }}
+          firebase deploy --only functions:${{ inputs.function-name }} --project=${{ matrix.project }}

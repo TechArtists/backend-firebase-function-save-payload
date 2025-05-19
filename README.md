@@ -127,7 +127,7 @@ Make sure your Cloud Function's service account has permission to write to your 
 The service account typically looks like:
 
 ```
-<PROJECT_NUMBER>@gcf-admin-robot.iam.gserviceaccount.com
+<PROJECT_NUMBER>-compute@developer.gserviceaccount.com
 ```
 
 **Grant "Storage Object Admin" role** to this service account on your Cloud Storage bucket:
