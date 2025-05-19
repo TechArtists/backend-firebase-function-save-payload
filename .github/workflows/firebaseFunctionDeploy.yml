@@ -44,4 +44,4 @@ jobs:
         run: |
           echo '${{ secrets.GCP_SA_KEY }}' > $HOME/gcp-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcp-key.json"
-          firebase deploy --only functions:${{ inputs.function-name }} --project=${{ inputs.project }}
+          firebase deploy --only functions:${{ inputs.function-name }} --project=${{ inputs.project }} --service-account=firebase-runtime@appex-data-imports.iam.gserviceaccount.com
