@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        project: ${{ fromJson('[''"' + inputs.projects.replace(',', '\",\"') + '"'']') }}
+        project: ${{ inputs.projects && inputs.projects != '' && inputs.projects.split(',') || '' }}
 
     steps:
       - name: Checkout repo
