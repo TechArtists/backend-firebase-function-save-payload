@@ -70,5 +70,4 @@ jobs:
         run: |
           firebase functions:artifacts:setpolicy \
             --project=${{ matrix.project }} \
-            --location=us-central1 \
-            --quiet || true
+            --location=us-central1 || true
