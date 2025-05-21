@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       projects:
-        description: 'List of projects to deploy to'
+        description: 'Comma-separated list of projects'
         required: true
         type: string
       target-bucket:
@@ -20,12 +20,24 @@ on:
         required: true
 
 jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Convert comma-separated projects to matrix
+        id: set-matrix
+        run: |
+          PROJECTS="${{ inputs.projects }}"
+          JSON=$(echo "$PROJECTS" | jq -R 'split(",")' | jq -c '{project: .}')
+          echo "matrix=$JSON" >> $GITHUB_OUTPUT
+
   deploy:
+    needs: prepare-matrix
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        project: ${{ fromJSON(inputs.projects) }}
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -56,4 +68,7 @@ jobs:
 
       - name: Ensure artifact cleanup policy is set for ${{ matrix.project }}
         run: |
-          firebase functions:artifacts:setpolicy --project=${{ matrix.project }} --location=us-central1 --quiet || true
+          firebase functions:artifacts:setpolicy \
+            --project=${{ matrix.project }} \
+            --location=us-central1 \
+            --quiet || true
