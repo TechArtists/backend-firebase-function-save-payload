@@ -49,4 +49,8 @@ jobs:
         run: |
           echo '${{ secrets.GCP_SA_KEY }}' > $HOME/gcp-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcp-key.json"
-          firebase deploy --only functions:${{ inputs.function-name }} --project=${{ matrix.project }}
+          firebase deploy --only functions:${{ inputs.function-name }} --project=${{ matrix.project }} --force
+
+      - name: Ensure artifact cleanup policy is set for ${{ matrix.project }}
+        run: |
+          firebase functions:artifacts:setpolicy --project=${{ matrix.project }} --location=us-central1 --quiet || true
