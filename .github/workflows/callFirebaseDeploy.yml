@@ -2,28 +2,13 @@ name: Call Firebase Deploy
 
 on:
   workflow_dispatch:
-    inputs:
-      function-name:
-        description: 'Name of the Firebase function to deploy'
-        required: true
-        type: string
-        default: savePayload
-      projects:
-        description: 'Comma-separated list of projects to deploy to'
-        required: true
-        type: string
-      target-bucket:
-        description: 'Target bucket for the function'
-        required: true
-        type: string
-        default: appex_app_payloads
 
 jobs:
   deploy:
     uses: ./.github/workflows/firebaseFunctionDeploy.yml
     with:
-      function-name: ${{ inputs.function-name }}
-      projects: ${{ inputs.projects }}
-      target-bucket: ${{ inputs.target-bucket }}
+      function-name: savePayload 
+      projects: fitnessai-api, allstays-appex
+      target-bucket: appex_app_payloads
     secrets:
       GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
