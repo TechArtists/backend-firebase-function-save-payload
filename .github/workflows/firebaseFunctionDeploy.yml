@@ -15,6 +15,9 @@ on:
         description: 'Target bucket for the function'
         required: true
         type: string
+    secrets:
+      GCP_SA_KEY:
+        required: true
 
 jobs:
   deploy:
