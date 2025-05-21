@@ -119,25 +119,98 @@ The `savePayload` Cloud Function expects the incoming request body to be a dicti
 - `payload`: A nested dictionary containing the actual data you want to store (e.g., install dates, campaigns, user IDs).
 
 ---
+### GitHub Workflow Deployment
 
-### ☁️ Cloud Storage Permissions
+### Prerequisites
 
-Make sure your Cloud Function's service account has permission to write to your bucket.
+Before deploying Firebase Functions using the GitHub workflow, ensure the following setup is completed:
 
-The service account typically looks like:
+1. **Service Account Setup**
+   - Create a service account named `firebase-function-deploy` in your GCP project (it is not mandatory to be the same project where the Firebase Function will be deployed)
+   - Store the service account key as a GitHub secret named `GCP_SA_KEY`
 
-```
-<PROJECT_NUMBER>-compute@developer.gserviceaccount.com
-```
+   **Steps:** (Project where the SA was created)
+   1. Go to Google Cloud Console → IAM & Admin → Service Accounts
+   2. Click "Create Service Account"
+   3. Name it `firebase-function-deploy`
+   4. Click "Create and Continue"
+   5. Click "Done"
+   6. Find the created service account and click on it
+   7. Go to "Keys" tab
+   8. Click "Add Key" → "Create new key"
+   9. Choose JSON format and click "Create"
+   10. The key file will be downloaded automatically
+   11. Go to your GitHub repository → Settings → Secrets and variables → Actions
+   12. Click "New repository secret"
+   13. Name: `GCP_SA_KEY`
+   14. Value: Paste the entire contents of the downloaded JSON key file
+   15. Click "Add secret"
 
-**Grant "Storage Object Admin" role** to this service account on your Cloud Storage bucket:
+2. **IAM Permissions Configuration**
+   In the target project (where Firebase Functions will be deployed):
+   - Grant Firebase Admin role to the `firebase-function-deploy` service account
+   - Grant Service Account User role to the `firebase-function-deploy` service account on the default compute service account
 
-1. Go to Google Cloud Console → Storage → Buckets → [your bucket] → Permissions.
-2. Click **"Grant Access"**.
-3. Add the service account email.
-4. Assign role: **Storage Object Admin**.
+   **Steps:**
+   1. Go to Google Cloud Console → IAM & Admin → IAM
+   2. Click "Edit" (pencil icon) for the `firebase-function-deploy` service account
+   3. Click "Add another role"
+   4. Search for and select "Firebase Admin"
+   5. Click "Save"
+   6. Go the IAM & Admin -> Service Accounts and find the default compute service account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`) in the list.
+   7. Click the three vertical dots under the "Actions" column for this service account.
+   8. Select **"Manage permissions"** from the dropdown.
+   9. In the "Permissions" tab, click **"Grant access"**.
+   10. In the "Add principals" field, enter the email of your `firebase-function-deploy` service account.
+   11. Under "Assign roles," select **Service Account User**.
+   12. Click **Save**.
 
-Without this permission, uploads will fail with `storage.objects.create` denied errors.
+3. **Storage Bucket Permissions**
+   In the project where the storage bucket is created:
+   - Grant Storage Object Admin role to the target project's default compute service account
+
+   **Steps:**
+   1. Go to Google Cloud Console → Storage → Buckets
+   2. Click on your target bucket
+   3. Go to "Permissions" tab
+   4. Click "Grant Access"
+   5. Add the default compute service account email (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`)
+   6. Select role: "Storage Object Admin"
+   7. Click "Save"
+
+4. **Required GCP APIs**
+   For first-time deployments to a project, enable the following APIs:
+
+   **Steps:**
+   1. Go to Google Cloud Console → APIs & Services → Library
+   2. Search for and enable each of these APIs:
+      - Cloud Functions API
+      - Artifact Registry API
+      - Cloud Build API
+      - Cloud Run Admin API
+      - Eventarc API
+   3. For each API:
+      - Click on the API name
+      - Click "Enable"
+      - Wait for the API to be enabled before proceeding to the next one
+
+5. **Artifact Registry Policy**
+   Run the following command to activate artifact policies:
+   ```bash
+   firebase functions:artifacts:setpolicy --project=<your-firebase-project> --location=us-central1
+   ```
+
+### Deployment Process
+
+1. Navigate to the "Actions" tab in your GitHub repository
+2. Select the "Call Firebase Deploy" workflow
+3. Click "Run workflow"
+4. Configure the deployment parameters:
+   - `function-name`: Name of the Firebase function to deploy
+   - `projects`: Comma-separated list of target projects
+   - `target-bucket`: Target storage bucket name
+
+The workflow will automatically handle the deployment process across all specified projects.
 
 ## 🔥 Working with This Cloud Function Repo
 
