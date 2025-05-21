@@ -29,7 +29,7 @@ jobs:
         id: set-matrix
         run: |
           PROJECTS="${{ inputs.projects }}"
-          JSON=$(echo "$PROJECTS" | jq -R 'split(",")' | jq -c '{project: .}')
+          JSON=$(echo "$PROJECTS" | tr -d ' ' | tr ',' '\n' | jq -R . | jq -s '{project: .}')
           echo "matrix=$JSON" >> $GITHUB_OUTPUT
 
   deploy:
