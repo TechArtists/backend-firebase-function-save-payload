@@ -7,24 +7,23 @@ on:
         description: 'Name of the Firebase function to deploy'
         required: true
         type: string
-        default: 'savePayload'
+        default: savePayload
       projects:
         description: 'Comma-separated list of projects to deploy to'
         required: true
         type: string
-        default: 'fitnessai-api,allstays-appex'
       target-bucket:
         description: 'Target bucket for the function'
         required: true
         type: string
-        default: 'appex_app_payloads'
+        default: appex_app_payloads
 
 jobs:
   deploy:
     uses: ./.github/workflows/firebaseFunctionDeploy.yml
     with:
       function-name: ${{ inputs.function-name }}
-      projects: '["${{ inputs.projects }}"]'
+      projects: ${{ inputs.projects }}
       target-bucket: ${{ inputs.target-bucket }}
     secrets:
-      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }} 
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
