@@ -1,7 +1,7 @@
 # Firebase Function Save Payload (Data Upload)
 
 This module provides a Firebase Cloud Function for uploading a JSON payload to a Google Cloud Bucket with this format:
-   `gs://<TARGET_BUCKET>/<folderPrefix>/<YYYYMMDD>/<appID>/<userPseudoID>-<timestamp>.json`
+`gs://<TARGET_BUCKET>/<folderPrefix>/<YYYYMMDD>/<appID>/<userPseudoID>-<timestamp>.json`
 
 where:
 
@@ -11,7 +11,6 @@ where:
   - for Android, it prefixes with `ANDROID-` followed by the `package_name`
   - for iOS, it prefixes with `IOS-` followed by the `App Store ID` if available; otherwise, the `bundle ID`
 - `<YYYMMDD>` & `<timestamp>` are added by the server in ISO8601 format (e.g. `20250429T115622`)
-
 
 ## Swift Integration
 
@@ -119,6 +118,7 @@ The `savePayload` Cloud Function expects the incoming request body to be a dicti
 - `payload`: A nested dictionary containing the actual data you want to store (e.g., install dates, campaigns, user IDs).
 
 ---
+
 ### GitHub Workflow Deployment
 
 ### Prerequisites
@@ -158,6 +158,7 @@ Before deploying Firebase Functions using the GitHub workflow, ensure the follow
    4. Search for and select "Firebase Admin"
    5. Click "Save"
    6. Go the IAM & Admin -> Service Accounts and find the default compute service account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`) in the list.
+      - If the compute service account is not visible, enable the Compute Engine API in the project and refresh the list.
    7. Click the three vertical dots under the "Actions" column for this service account.
    8. Select **"Manage permissions"** from the dropdown.
    9. In the "Permissions" tab, click **"Grant access"**.
