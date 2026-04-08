@@ -8,7 +8,7 @@ jobs:
     uses: ./.github/workflows/firebaseFunctionDeploy.yml
     with:
       function-name: savePayload
-      projects: "fitnessai-api,allstays-appex,dietbet-staging,stepbet-staging-99260"
+      projects: "fitnessai-api,allstays-appex,dietbet-staging,stepbet-staging-99260,dietbet-5771b,stepbet-1210"
       target-bucket: appex_app_payloads
     secrets:
       GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
