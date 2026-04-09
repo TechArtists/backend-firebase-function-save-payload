@@ -121,6 +121,38 @@ The `savePayload` Cloud Function expects the incoming request body to be a dicti
 
 ### GitHub Workflow Deployment
 
+This repo provides a **reusable GitHub Actions workflow** that can be called from any other repo/org. You don't need to fork or copy the function code — just create a thin caller workflow in your repo.
+
+#### Using the Reusable Workflow (Recommended)
+
+In your organization's repo, create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy Firebase Functions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: TechArtists/backend-firebase-function-save-payload/.github/workflows/firebaseFunctionDeploy.yml@main
+    with:
+      function-name: savePayload
+      projects: "your-project-a,your-project-b"
+      target-bucket: your_bucket_name
+    secrets:
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+```
+
+| Parameter | Description |
+|---|---|
+| `function-name` | Name of the Firebase function to deploy (e.g. `savePayload`) |
+| `projects` | Comma-separated list of Firebase project IDs to deploy to |
+| `target-bucket` | GCS bucket name where payloads will be stored |
+| `GCP_SA_KEY` | GitHub secret containing the JSON key for the deploy service account |
+
+A template caller workflow is also available at [`.github/workflows/callFirebaseDeploy.yml`](.github/workflows/callFirebaseDeploy.yml).
+
 ### Prerequisites
 
 Before deploying Firebase Functions using the GitHub workflow, ensure the following setup is completed:
@@ -230,23 +262,22 @@ If you prefer to configure permissions manually or the script doesn't work in yo
 
 ### Deployment Process
 
-1. Navigate to the "Actions" tab in your GitHub repository
-2. Select the "Call Firebase Deploy" workflow
-3. Click "Run workflow"
-4. Configure the deployment parameters:
-   - `function-name`: Name of the Firebase function to deploy
-   - `projects`: Comma-separated list of target projects
-   - `target-bucket`: Target storage bucket name
+1. In your org's repo, create a caller workflow as shown in [Using the Reusable Workflow](#using-the-reusable-workflow-recommended)
+2. Add the `GCP_SA_KEY` secret to your repo (Settings → Secrets and variables → Actions)
+3. Navigate to the "Actions" tab in your GitHub repository
+4. Select your deploy workflow and click "Run workflow"
 
-The workflow will automatically handle the deployment process across all specified projects.
+The workflow will automatically deploy the function across all specified projects in parallel.
 
 ## 🔥 Working with This Cloud Function Repo
 
-This repo is designed to be deployed across **multiple Firebase projects**.
+This repo is designed to be deployed across **multiple Firebase projects** and organizations using the reusable GitHub Actions workflow.
 
 ### 🚀 Getting Started
 
-This repo is designed to be **added to an existing Firebase project**, not deployed standalone.
+The recommended way to deploy is via the **reusable workflow** (see [GitHub Workflow Deployment](#github-workflow-deployment) above). No need to fork or clone this repo — just create a caller workflow in your org's repo.
+
+For local development or manual deployment, follow the steps below.
 
 ---
 
@@ -254,55 +285,32 @@ This repo is designed to be **added to an existing Firebase project**, not deplo
 
    ```bash
    git clone https://github.com/TechArtists/backend-firebase-function-save-payload.git
+   cd backend-firebase-function-save-payload
    ```
 
-2. **Integrate into Your Firebase Project**
-
-   Inside your Firebase project root:
-
-   ```bash
-   cd your-firebase-project
-   ```
-
-   Copy the contents of this repo into your `functions/` folder.
-
-3. **Install Dependencies**
+2. **Install Dependencies**
 
    ```bash
    cd functions
    npm install
    ```
 
-4. **Set Up Your Environment**
-
-   Create your own `.env` file:
-
-   ```bash
-   touch .env
-   ```
-
-   Then add your Firebase project-specific variables:
-
-   ```env
-   TARGET_BUCKET=your-bucket-name
-   ```
-
-   Or, alternatively, use Firebase Functions config:
-
-   ```bash
-   firebase functions:config:set env.target_bucket="your-bucket-name"
-   ```
-
-5. **Link to Your Firebase Project**
-
-   Log in and set up the Firebase CLI:
+3. **Link to Your Firebase Project**
 
    ```bash
    firebase login
    firebase use --add
    ```
 
-6. **Build and Deploy**
+4. **Set Up Local Environment**
+
+   Create a `.env` file in the `functions/` directory (only needed for local development — the GitHub workflow handles this automatically during deployment):
+
+   ```env
+   TARGET_BUCKET=your-bucket-name
+   ```
+
+5. **Build and Deploy**
 
    ```bash
    npm run build

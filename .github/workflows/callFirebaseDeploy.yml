@@ -1,3 +1,17 @@
+# Template: Call Firebase Deploy
+#
+# Copy this file into your repo's .github/workflows/ directory and customize
+# the values below for your organization's Firebase projects.
+#
+# Prerequisites:
+#   1. Add a GCP_SA_KEY secret to your repo (JSON key for a service account
+#      with Firebase Admin permissions across your projects)
+#   2. Run scripts/setup-project-permissions.sh for each project to configure
+#      the required IAM roles and APIs
+#
+# Usage from another repo (reusable workflow):
+#   uses: TechArtists/backend-firebase-function-save-payload/.github/workflows/firebaseFunctionDeploy.yml@main
+
 name: Call Firebase Deploy
 
 on:
@@ -5,10 +19,10 @@ on:
 
 jobs:
   deploy:
-    uses: ./.github/workflows/firebaseFunctionDeploy.yml
+    uses: TechArtists/backend-firebase-function-save-payload/.github/workflows/firebaseFunctionDeploy.yml@main
     with:
-      function-name: savePayload
-      projects: "fitnessai-api,allstays-appex,dietbet-staging,stepbet-staging-99260,dietbet-5771b,stepbet-1210"
-      target-bucket: appex_app_payloads
+      function-name: savePayload                        # Firebase function to deploy
+      projects: "project-a,project-b,project-c"         # Comma-separated Firebase project IDs
+      target-bucket: your_bucket_name                    # GCS bucket for payload storage
     secrets:
       GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
