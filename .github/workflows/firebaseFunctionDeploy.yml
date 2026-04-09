@@ -41,6 +41,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          repository: TechArtists/backend-firebase-function-save-payload
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
