@@ -5,6 +5,7 @@ import * as dotenv from "dotenv";
 import {Bucket} from "@google-cloud/storage";
 import {firebase_v1beta1, google} from "googleapis";
 import {OAuth2Client} from "google-auth-library";
+import {canonicalize} from "./canonicalize";
 
 dotenv.config();
 
@@ -97,7 +98,7 @@ export const damaTest=onCall(
 
     await checkBucketWritePermission(bucket);
 
-    const jsonLines = JSON.stringify(JSON.parse(JSON.stringify(payload, Object.keys(payload).sort())));
+    const jsonLines = JSON.stringify(canonicalize(payload));
 
     await bucket.file(filePath).save(jsonLines, {
       contentType: "application/json",
@@ -187,7 +188,7 @@ export const savePayload=onCall(
 
     await checkBucketWritePermission(bucket);
 
-    const jsonLines = JSON.stringify(JSON.parse(JSON.stringify(payload, Object.keys(payload).sort())));
+    const jsonLines = JSON.stringify(canonicalize(payload));
 
     await bucket.file(filePath).save(jsonLines, {
       contentType: "application/json",
