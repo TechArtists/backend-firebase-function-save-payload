@@ -203,8 +203,12 @@ If you prefer to configure permissions manually or the script doesn't work in yo
 2. **IAM Permissions Configuration**
    In the target project (where Firebase Functions will be deployed):
    - Grant Firebase Admin role to the `firebase-function-deploy` service account
-   - Grant Service Account User role to the `firebase-function-deploy` service account on the default compute service account
+   - Grant Service Account User role to the `firebase-function-deploy` service account on **both** runtime service accounts:
+     - the default compute service account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`) — the Gen 2 Cloud Functions runtime, which `savePayload` uses
+     - the App Engine default service account (`<PROJECT_ID>@appspot.gserviceaccount.com`) — the Gen 1 Cloud Functions runtime; `firebase-tools`' deploy preflight checks `iam.serviceAccounts.actAs` on this account for any Firebase Functions deploy, so the binding is required even when every deployed function is Gen 2
    - Grant Service Usage Consumer role to the `firebase-function-deploy` service account (allows Firebase to enable APIs during deployment)
+
+   > If the deploy fails with `Missing permissions required for functions deploy. You must have permission iam.serviceAccounts.ActAs on service account <PROJECT_ID>@appspot.gserviceaccount.com`, the App Engine SA binding above is missing.
 
    **Steps:**
    1. Go to Google Cloud Console → IAM & Admin → IAM
@@ -212,7 +216,7 @@ If you prefer to configure permissions manually or the script doesn't work in yo
    3. Click "Add another role"
    4. Search for and select "Firebase Admin"
    5. Click "Save"
-   6. Go the IAM & Admin -> Service Accounts and find the default compute service account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`) in the list.
+   6. Go to IAM & Admin → Service Accounts and find the default compute service account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`) in the list.
       - If the compute service account is not visible, enable the Compute Engine API in the project and refresh the list.
    7. Click the three vertical dots under the "Actions" column for this service account.
    8. Select **"Manage permissions"** from the dropdown.
@@ -220,6 +224,7 @@ If you prefer to configure permissions manually or the script doesn't work in yo
    10. In the "Add principals" field, enter the email of your `firebase-function-deploy` service account.
    11. Under "Assign roles," select **Service Account User**.
    12. Click **Save**.
+   13. Repeat steps 6–12 for the App Engine default service account (`<PROJECT_ID>@appspot.gserviceaccount.com`). If it is not listed, open the project's App Engine page once (Google Cloud Console → App Engine) to provision it, then refresh the Service Accounts list.
 
 3. **Storage Bucket Permissions**
    In the project where the storage bucket is created:

@@ -54,7 +54,8 @@ Automates IAM role, API enablement, and optionally bucket permissions for Fireba
 
 1. **Grants IAM Roles**:
    - `Firebase Admin` — Required to deploy Firebase Functions
-   - `Service Account User` — Required on default compute SA to impersonate it
+   - `Service Account User` on the **default compute SA** (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`) — Gen 2 Cloud Functions runtime; required to impersonate it
+   - `Service Account User` on the **App Engine default SA** (`<PROJECT_ID>@appspot.gserviceaccount.com`) — required by `firebase-tools`' deploy preflight (`iam.serviceAccounts.actAs`) for any Firebase Functions deploy, even when every deployed function is Gen 2. If this binding is missing, deploy fails with `Missing permissions required for functions deploy. You must have permission iam.serviceAccounts.ActAs on service account <PROJECT_ID>@appspot.gserviceaccount.com`.
    - `Service Usage Consumer` — Allows Firebase CLI to enable APIs automatically
 2. **Enables APIs**:
    - Cloud Functions API
