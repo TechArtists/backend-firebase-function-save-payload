@@ -268,6 +268,7 @@ async function checkBucketWritePermission(bucket: Bucket): Promise<void> {
 
 function generateFilePath(userPseudoID: string, folderPrefix: string, appId: string): string {
   const normalizedUserId = userPseudoID.toUpperCase().replace(/-/g, "");
+  const normalizedFolderPrefix = folderPrefix.replace(/ /g, "_");
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -275,9 +276,9 @@ function generateFilePath(userPseudoID: string, folderPrefix: string, appId: str
   const hh = String(now.getHours()).padStart(2, "0");
   const min = String(now.getMinutes()).padStart(2, "0");
   const ss = String(now.getSeconds()).padStart(2, "0");
-  const datePath = `${yyyy}${mm}${dd}`;
+  const datePath = `report_date=${yyyy}-${mm}-${dd}`;
   const timestamp = `${yyyy}${mm}${dd}T${hh}${min}${ss}`;
   const fileName = `${normalizedUserId}-${timestamp}.json`;
-  const filePath = `${folderPrefix}/${datePath}/${appId}/${fileName}`;
+  const filePath = `${normalizedFolderPrefix}/${datePath}/${appId}/${fileName}`;
   return filePath;
 }
