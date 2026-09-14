@@ -51,6 +51,7 @@ PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectN
 echo "Project Number: $PROJECT_NUMBER"
 
 COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+APP_ENGINE_SA="${PROJECT_ID}@appspot.gserviceaccount.com"
 
 echo ""
 echo -e "${BLUE}=== Granting IAM Roles ===${NC}"
@@ -64,17 +65,33 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   2>/dev/null || echo "  (Already granted or skipped)"
 echo -e "${GREEN}✓ Firebase Admin${NC}"
 
-# Grant Service Account User on default compute SA
+# Grant Service Account User on default compute SA (Gen 2 runtime SA)
 echo -e "${BLUE}2. Granting Service Account User on compute SA ($COMPUTE_SA)...${NC}"
 gcloud iam service-accounts add-iam-policy-binding "$COMPUTE_SA" \
   --member="serviceAccount:${DEPLOY_SA}" \
   --role="roles/iam.serviceAccountUser" \
   --project="$PROJECT_ID" \
   2>/dev/null || echo "  (Already granted or skipped)"
-echo -e "${GREEN}✓ Service Account User${NC}"
+echo -e "${GREEN}✓ Service Account User (compute SA)${NC}"
+
+# Grant Service Account User on App Engine default SA.
+# firebase-tools' deploy preflight checks iam.serviceAccounts.actAs on this
+# account for any Firebase Functions deploy — required even when every
+# deployed function is Gen 2 and does not run as this SA.
+echo -e "${BLUE}3. Granting Service Account User on App Engine SA ($APP_ENGINE_SA)...${NC}"
+if ! gcloud iam service-accounts add-iam-policy-binding "$APP_ENGINE_SA" \
+  --member="serviceAccount:${DEPLOY_SA}" \
+  --role="roles/iam.serviceAccountUser" \
+  --project="$PROJECT_ID" \
+  2>/dev/null; then
+  echo -e "${YELLOW}  ⚠ Could not bind. If the App Engine SA does not exist yet, open the project's${NC}"
+  echo -e "${YELLOW}    App Engine page once (https://console.cloud.google.com/appengine?project=$PROJECT_ID)${NC}"
+  echo -e "${YELLOW}    to provision it, then rerun this script.${NC}"
+fi
+echo -e "${GREEN}✓ Service Account User (App Engine SA)${NC}"
 
 # Grant Service Usage Consumer
-echo -e "${BLUE}3. Granting Service Usage Consumer role to $DEPLOY_SA...${NC}"
+echo -e "${BLUE}4. Granting Service Usage Consumer role to $DEPLOY_SA...${NC}"
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:${DEPLOY_SA}" \
   --role="roles/serviceusage.serviceUsageConsumer" \
@@ -131,7 +148,8 @@ echo -e "${GREEN}=== Setup Complete ===${NC}"
 echo ""
 echo "Summary:"
 echo "  ✓ Firebase Admin role granted"
-echo "  ✓ Service Account User role granted on compute SA"
+echo "  ✓ Service Account User role granted on compute SA (Gen 2 runtime)"
+echo "  ✓ Service Account User role granted on App Engine SA (firebase-tools preflight)"
 echo "  ✓ Service Usage Consumer role granted"
 echo "  ✓ All required APIs enabled"
 if [ -n "$BUCKET_PROJECT" ] && [ -n "$BUCKET_NAME" ]; then

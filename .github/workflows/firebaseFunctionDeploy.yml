@@ -55,7 +55,10 @@ jobs:
           echo "TARGET_BUCKET=${{ inputs.target-bucket }}" > .env
 
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        # Pinned to avoid silent behavior changes between deploys — e.g. new
+        # preflight IAM checks introduced by upstream (see CHANGELOG). Bump
+        # deliberately when we want to pick up a newer release.
+        run: npm install -g firebase-tools@15.30.0
 
       - name: Install dependencies
         run: |
