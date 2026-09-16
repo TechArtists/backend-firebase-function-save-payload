@@ -140,6 +140,7 @@ jobs:
       function-name: savePayload
       projects: "your-project-a,your-project-b"
       target-bucket: your_bucket_name
+      source-ref: REPLACE_WITH_REVIEWED_COMMIT_SHA
     secrets:
       GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 ```
@@ -149,6 +150,7 @@ jobs:
 | `function-name` | Name of the Firebase function to deploy (e.g. `savePayload`) |
 | `projects` | Comma-separated list of Firebase project IDs to deploy to |
 | `target-bucket` | GCS bucket name where payloads will be stored |
+| `source-ref` | Exact backend commit or tag to check out and deploy |
 | `GCP_SA_KEY` | GitHub secret containing the JSON key for the deploy service account |
 
 A template caller workflow is also available at [`.github/workflows/callFirebaseDeploy.yml`](.github/workflows/callFirebaseDeploy.yml).

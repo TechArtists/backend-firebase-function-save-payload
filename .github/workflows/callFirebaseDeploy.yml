@@ -24,5 +24,6 @@ jobs:
       function-name: savePayload                        # Firebase function to deploy
       projects: "project-a,project-b,project-c"         # Comma-separated Firebase project IDs
       target-bucket: your_bucket_name                    # GCS bucket for payload storage
+      source-ref: REPLACE_WITH_REVIEWED_COMMIT_SHA       # Exact backend source revision to deploy
     secrets:
       GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
