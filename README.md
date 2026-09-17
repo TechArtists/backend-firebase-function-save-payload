@@ -164,10 +164,9 @@ Before deploying Firebase Functions using the GitHub workflow, ensure the follow
 To automate most of the configuration, use the provided setup script:
 
 ```bash
-# AppEx only: use the script's default deployment service account
-./scripts/setup-project-permissions.sh <PROJECT_ID>
+# Configure the deployment identity and target project permissions
+./scripts/setup-project-permissions.sh <PROJECT_ID> <DEPLOY_SERVICE_ACCOUNT_EMAIL>
 
-# Other organizations: pass the deployment service account explicitly.
 # Add bucket parameters to grant the runtime account access in the same run.
 ./scripts/setup-project-permissions.sh <PROJECT_ID> <DEPLOY_SERVICE_ACCOUNT_EMAIL> <BUCKET_PROJECT> <BUCKET_NAME>
 ```
@@ -263,6 +262,10 @@ If you prefer to configure permissions manually or the script doesn't work in yo
       - [Cloud Build API](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com)
       - [Cloud Run Admin API](https://console.cloud.google.com/apis/library/run.googleapis.com)
       - [Eventarc API](https://console.cloud.google.com/apis/library/eventarc.googleapis.com)
+      - [Cloud Pub/Sub API](https://console.cloud.google.com/apis/library/pubsub.googleapis.com)
+      - [Cloud Storage API](https://console.cloud.google.com/apis/library/storage.googleapis.com)
+      - [Firebase Extensions API](https://console.cloud.google.com/apis/library/firebaseextensions.googleapis.com)
+      - [Cloud Billing API](https://console.cloud.google.com/apis/library/cloudbilling.googleapis.com)
       - [Firebase Management API](https://console.cloud.google.com/apis/library/firebase.googleapis.com)
       - [Identity and Access Management API](https://console.cloud.google.com/apis/library/iam.googleapis.com)
 

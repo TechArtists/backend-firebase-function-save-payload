@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Setup Firebase Function Deploy Permissions
-# Usage: ./setup-project-permissions.sh <PROJECT_ID> [DEPLOY_SERVICE_ACCOUNT_EMAIL] [BUCKET_PROJECT] [BUCKET_NAME]
-# Example: ./setup-project-permissions.sh dietbet-staging firebase-function-deploy@appex-data-imports.iam.gserviceaccount.com appex-data-imports appex_app_payloads
+# Usage: ./setup-project-permissions.sh <PROJECT_ID> <DEPLOY_SERVICE_ACCOUNT_EMAIL> [BUCKET_PROJECT] [BUCKET_NAME]
+# Example: ./setup-project-permissions.sh example-app-prod firebase-function-deploy@deployment-infra.iam.gserviceaccount.com central-storage app_payloads
 
 set -e
 
@@ -14,15 +14,15 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Check arguments
-if [ -z "$1" ]; then
-  echo -e "${RED}Error: PROJECT_ID is required${NC}"
-  echo "Usage: $0 <PROJECT_ID> [DEPLOY_SERVICE_ACCOUNT_EMAIL] [BUCKET_PROJECT] [BUCKET_NAME]"
-  echo "Example: $0 dietbet-staging firebase-function-deploy@appex-data-imports.iam.gserviceaccount.com appex-data-imports appex_app_payloads"
+if [ -z "$1" ] || [ -z "$2" ]; then
+  echo -e "${RED}Error: PROJECT_ID and DEPLOY_SERVICE_ACCOUNT_EMAIL are required${NC}"
+  echo "Usage: $0 <PROJECT_ID> <DEPLOY_SERVICE_ACCOUNT_EMAIL> [BUCKET_PROJECT] [BUCKET_NAME]"
+  echo "Example: $0 example-app-prod firebase-function-deploy@deployment-infra.iam.gserviceaccount.com central-storage app_payloads"
   exit 1
 fi
 
 PROJECT_ID="$1"
-DEPLOY_SA="${2:-firebase-function-deploy@appex-data-imports.iam.gserviceaccount.com}"
+DEPLOY_SA="$2"
 BUCKET_PROJECT="$3"
 BUCKET_NAME="$4"
 
@@ -93,6 +93,10 @@ TARGET_PROJECT_APIS=(
   "artifactregistry.googleapis.com"
   "run.googleapis.com"
   "eventarc.googleapis.com"
+  "pubsub.googleapis.com"
+  "storage.googleapis.com"
+  "firebaseextensions.googleapis.com"
+  "cloudbilling.googleapis.com"
   "firebase.googleapis.com"
   "iam.googleapis.com"
 )

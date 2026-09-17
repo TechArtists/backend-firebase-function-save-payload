@@ -22,33 +22,21 @@ Automates IAM role, API enablement, and optionally bucket permissions for Fireba
 ### Usage
 
 ```bash
-./scripts/setup-project-permissions.sh <PROJECT_ID> [DEPLOY_SERVICE_ACCOUNT_EMAIL] [BUCKET_PROJECT] [BUCKET_NAME]
+./scripts/setup-project-permissions.sh <PROJECT_ID> <DEPLOY_SERVICE_ACCOUNT_EMAIL> [BUCKET_PROJECT] [BUCKET_NAME]
 ```
 
 ### Examples
 
-**Setup using the default AppEx deployment service account:**
+**Set up a target project:**
 
 ```bash
-./scripts/setup-project-permissions.sh dietbet-staging
+./scripts/setup-project-permissions.sh example-app-staging firebase-function-deploy@deployment-infra.iam.gserviceaccount.com
 ```
 
-**Setup with your own deployment service account (recommended outside AppEx):**
+**Set up a target project and grant bucket permissions:**
 
 ```bash
-./scripts/setup-project-permissions.sh fitnessai-api firebase-function-deploy@my-other-project.iam.gserviceaccount.com
-```
-
-**Setup deployment project AND grant bucket permissions:**
-
-```bash
-./scripts/setup-project-permissions.sh dietbet-staging firebase-function-deploy@appex-data-imports.iam.gserviceaccount.com appex-data-imports appex_app_payloads
-```
-
-**Setup production project with bucket permissions:**
-
-```bash
-./scripts/setup-project-permissions.sh dietbet-5771b firebase-function-deploy@appex-data-imports.iam.gserviceaccount.com appex-data-imports appex_app_payloads
+./scripts/setup-project-permissions.sh example-app-prod firebase-function-deploy@deployment-infra.iam.gserviceaccount.com central-storage app_payloads
 ```
 
 ### What It Does
@@ -77,6 +65,10 @@ Firebase Management API has not been used in project <NUMBER> before or it is di
    - Artifact Registry API
    - Cloud Run Admin API
    - Eventarc API
+   - Cloud Pub/Sub API
+   - Cloud Storage API
+   - Firebase Extensions API
+   - Cloud Billing API
    - Firebase Management API
    - Identity and Access Management API
 2. **Grants IAM Roles**:
@@ -94,7 +86,7 @@ Firebase Management API has not been used in project <NUMBER> before or it is di
 
 ### Notes
 
-- The default service account is AppEx-specific. Other organizations must pass their deployment service account as the second argument.
+- The deployment service account is required and must be passed as the second argument.
 - The script derives the service account's project from an address shaped like `<NAME>@<PROJECT_ID>.iam.gserviceaccount.com`.
 - API enablement may take 1-2 minutes to propagate
 - Bucket permissions are **optional** — only provide if deploying immediately
