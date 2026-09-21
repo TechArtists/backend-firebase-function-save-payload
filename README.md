@@ -135,7 +135,7 @@ on:
 
 jobs:
   deploy:
-    uses: TechArtists/backend-firebase-function-save-payload/.github/workflows/firebaseFunctionDeploy.yml@main
+    uses: TechArtists/backend-firebase-function-save-payload/.github/workflows/firebaseFunctionDeploy.yml@REPLACE_WITH_REVIEWED_COMMIT_SHA
     with:
       function-name: savePayload
       projects: "your-project-a,your-project-b"
@@ -164,16 +164,16 @@ Before deploying Firebase Functions using the GitHub workflow, ensure the follow
 To automate most of the configuration, use the provided setup script:
 
 ```bash
-# Setup deployment project
-./scripts/setup-project-permissions.sh <PROJECT_ID>
+# Configure the deployment identity and target project permissions
+./scripts/setup-project-permissions.sh <PROJECT_ID> <DEPLOY_SERVICE_ACCOUNT_EMAIL>
 
-# Or, to also configure bucket permissions in one go
-./scripts/setup-project-permissions.sh <PROJECT_ID> firebase-function-deploy@appex-data-imports.iam.gserviceaccount.com <BUCKET_PROJECT> <BUCKET_NAME>
+# Add bucket parameters to grant the runtime account access in the same run.
+./scripts/setup-project-permissions.sh <PROJECT_ID> <DEPLOY_SERVICE_ACCOUNT_EMAIL> <BUCKET_PROJECT> <BUCKET_NAME>
 ```
 
 See [scripts/README.md](scripts/README.md) for full script documentation and examples.
 
-**Note:** The script automates steps 2-4 below. You still need to complete step 1 (Service Account Setup) manually.
+**Note:** Create the service account and its JSON key first. The script then configures the service account project, target project, and optional bucket permissions described below.
 
 ---
 
@@ -182,7 +182,7 @@ See [scripts/README.md](scripts/README.md) for full script documentation and exa
 If you prefer to configure permissions manually or the script doesn't work in your environment, follow these steps:
 
 1. **Service Account Setup**
-   - Create a service account named `firebase-function-deploy` in your GCP project (it is not mandatory to be the same project where the Firebase Function will be deployed) -- this is already done, SA exists in appex-data-imports
+   - Create a service account named `firebase-function-deploy` in a GCP project. It does not need to be the same project where the Firebase Function will be deployed.
    - Store the service account key as a GitHub secret named `GCP_SA_KEY`
 
    **Steps:** (Project where the SA was created)
@@ -209,6 +209,8 @@ If you prefer to configure permissions manually or the script doesn't work in yo
      - the default compute service account (`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`) — the Gen 2 Cloud Functions runtime, which `savePayload` uses
      - the App Engine default service account (`<PROJECT_ID>@appspot.gserviceaccount.com`) — the Gen 1 Cloud Functions runtime; `firebase-tools`' deploy preflight checks `iam.serviceAccounts.actAs` on this account for any Firebase Functions deploy, so the binding is required even when every deployed function is Gen 2
    - Grant Service Usage Consumer role to the `firebase-function-deploy` service account (allows Firebase to enable APIs during deployment)
+   - Grant Firebase Viewer to the target project's default compute service account
+   - Grant Cloud Build Builder to the target project's default compute service account when it is the project's default Cloud Build identity
 
    > If the deploy fails with `Missing permissions required for functions deploy. You must have permission iam.serviceAccounts.ActAs on service account <PROJECT_ID>@appspot.gserviceaccount.com`, the App Engine SA binding above is missing.
 
@@ -242,7 +244,15 @@ If you prefer to configure permissions manually or the script doesn't work in yo
    7. Click "Save"
 
 4. **Required GCP APIs**
-   For first-time deployments to a project, enable the following APIs:
+   For first-time deployments, enable APIs in both the deployment identity project and each target project.
+
+   **In the project that owns `firebase-function-deploy`:**
+   - [Cloud Resource Manager API](https://console.cloud.google.com/apis/library/cloudresourcemanager.googleapis.com)
+   - [Firebase Management API](https://console.cloud.google.com/apis/library/firebase.googleapis.com)
+   - [Service Usage API](https://console.cloud.google.com/apis/library/serviceusage.googleapis.com)
+   - [Identity and Access Management API](https://console.cloud.google.com/apis/library/iam.googleapis.com)
+
+   Firebase CLI uses this project for control-plane requests made by the deployment identity. If either of the first two APIs is disabled here, deployment fails with an HTTP 403 naming the service account project's number.
 
    **In each target project (deployment projects):**
    1. Go to Google Cloud Console → APIs & Services → Library
@@ -252,6 +262,12 @@ If you prefer to configure permissions manually or the script doesn't work in yo
       - [Cloud Build API](https://console.cloud.google.com/apis/library/cloudbuild.googleapis.com)
       - [Cloud Run Admin API](https://console.cloud.google.com/apis/library/run.googleapis.com)
       - [Eventarc API](https://console.cloud.google.com/apis/library/eventarc.googleapis.com)
+      - [Cloud Pub/Sub API](https://console.cloud.google.com/apis/library/pubsub.googleapis.com)
+      - [Cloud Storage API](https://console.cloud.google.com/apis/library/storage.googleapis.com)
+      - [Firebase Extensions API](https://console.cloud.google.com/apis/library/firebaseextensions.googleapis.com)
+      - [Cloud Billing API](https://console.cloud.google.com/apis/library/cloudbilling.googleapis.com)
+      - [Firebase Management API](https://console.cloud.google.com/apis/library/firebase.googleapis.com)
+      - [Identity and Access Management API](https://console.cloud.google.com/apis/library/iam.googleapis.com)
 
    **In the bucket project (where the storage bucket is created):**
    - Enable [Storage API](https://console.cloud.google.com/apis/library/storage.googleapis.com)
@@ -273,8 +289,11 @@ If you prefer to configure permissions manually or the script doesn't work in yo
 2. Add the `GCP_SA_KEY` secret to your repo (Settings → Secrets and variables → Actions)
 3. Navigate to the "Actions" tab in your GitHub repository
 4. Select your deploy workflow and click "Run workflow"
+5. Enter one or more comma-separated Firebase project IDs and start the run
 
 The workflow will automatically deploy the function across all specified projects in parallel.
+
+After the run succeeds, verify the function in Firebase Console under **Build → Functions**. It should be named `savePayload`, use region `us-central1`, show an active status, and contain the expected `TARGET_BUCKET` environment value.
 
 ## 🔥 Working with This Cloud Function Repo
 
